@@ -3,35 +3,45 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>D&D Draw Deck</title>
+  <title>Rumourmill — Draw a Rumor</title>
   <style>
     :root{
-      --bg1:#0b0f19; --bg2:#141a2a;
-      --card:#f6f6f6; --ink:#111; --muted:rgba(17,17,17,.62);
-      --glass: rgba(255,255,255,.10);
-      --glass2: rgba(255,255,255,.14);
-      --shadow: rgba(0,0,0,.42);
-      --ring: rgba(255,255,255,.18);
+      --bg1:#070a12;
+      --bg2:#10182a;
+
+      --ring: rgba(255,255,255,.16);
+      --glass: rgba(255,255,255,.08);
+      --glass2: rgba(255,255,255,.12);
+      --shadow: rgba(0,0,0,.55);
+
+      --card: rgba(252, 250, 245, .98);
+      --ink: #15161a;
+      --muted: rgba(21,22,26,.62);
+
+      --accent: rgba(140,90,255,.70);
+      --accent2: rgba(80,200,140,.65);
+      --accent3: rgba(255,170,60,.65);
     }
 
     *{ box-sizing:border-box; }
+    html, body{ height:100%; }
     body{
       margin:0;
-      min-height:100vh;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color:#fff;
       background:
-        radial-gradient(1100px 780px at 18% 12%, rgba(60,120,255,.16), transparent 58%),
-        radial-gradient(1000px 700px at 78% 22%, rgba(190,90,255,.12), transparent 55%),
+        radial-gradient(1100px 780px at 18% 10%, rgba(60,120,255,.16), transparent 58%),
+        radial-gradient(1000px 700px at 78% 20%, rgba(190,90,255,.12), transparent 55%),
         radial-gradient(900px 640px at 50% 92%, rgba(80,200,140,.10), transparent 56%),
         linear-gradient(180deg, var(--bg1), var(--bg2));
-      color:#fff;
       display:flex;
       align-items:center;
       justify-content:center;
       padding: 22px;
     }
 
-    .wrap{ width:min(980px, 100%); }
+    .wrap{ width:min(1040px, 100%); }
+
     .top{
       display:flex;
       align-items:flex-end;
@@ -40,19 +50,15 @@
       gap:12px;
       margin-bottom:14px;
     }
-    .brand{
-      display:flex; flex-direction:column; gap:4px;
-    }
+
+    .brand{ display:flex; flex-direction:column; gap:4px; }
     .brand h1{
       margin:0;
       font-size:18px;
       letter-spacing:.2px;
       opacity:.94;
     }
-    .brand .sub{
-      font-size:12px;
-      opacity:.72;
-    }
+    .brand .sub{ font-size:12px; opacity:.72; }
 
     .controls{
       display:flex;
@@ -61,6 +67,7 @@
       align-items:center;
       justify-content:flex-end;
     }
+
     button{
       border:1px solid var(--ring);
       border-radius: 12px;
@@ -82,103 +89,116 @@
       padding: 8px 10px;
       border-radius: 12px;
       border:1px solid var(--ring);
-      background: rgba(255,255,255,.07);
+      background: rgba(255,255,255,.06);
       box-shadow: 0 14px 40px var(--shadow);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      user-select:none;
     }
     .toggle input{ transform: translateY(1px); }
 
     .grid{
       display:grid;
-      grid-template-columns: 1.35fr .65fr;
+      grid-template-columns: 1.45fr .55fr;
       gap: 14px;
       align-items:start;
     }
-    @media (max-width: 860px){
+    @media (max-width: 900px){
       .grid{ grid-template-columns: 1fr; }
     }
 
+    /* === Card === */
     .card{
-      background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(244,244,244,.98));
+      background: linear-gradient(180deg, rgba(252,250,245,.99), rgba(246,244,238,.99));
       color: var(--ink);
-      border-radius: 18px;
+      border-radius: 20px;
       padding: 16px 16px 14px;
-      box-shadow: 0 24px 70px rgba(0,0,0,.52);
+      box-shadow: 0 28px 90px rgba(0,0,0,.62);
       border: 2px solid rgba(0,0,0,.10);
       overflow:hidden;
       position:relative;
-      min-height: 210px;
+      min-height: 280px;
     }
-    .card::before{
+
+    /* subtle “paper grain” effect */
+    .card::after{
       content:"";
-      position:absolute; inset:-40% -40%;
-      background: radial-gradient(circle at 22% 18%, rgba(120,80,255,.16), transparent 56%),
-                  radial-gradient(circle at 76% 22%, rgba(80,200,140,.12), transparent 55%);
-      transform: rotate(8deg);
+      position:absolute; inset:0;
+      background:
+        radial-gradient(circle at 25% 18%, rgba(140,90,255,.10), transparent 52%),
+        radial-gradient(circle at 76% 22%, rgba(80,200,140,.08), transparent 52%),
+        radial-gradient(circle at 52% 82%, rgba(255,170,60,.06), transparent 52%),
+        repeating-linear-gradient(0deg, rgba(0,0,0,.015), rgba(0,0,0,.015) 1px, transparent 1px, transparent 5px);
       pointer-events:none;
+      opacity:.85;
+      mix-blend-mode:multiply;
     }
 
-    .raritybar{
-      height:7px;
-      border-radius:999px;
-      background: rgba(0,0,0,.10);
-      overflow:hidden;
-      margin-bottom: 12px;
-      position:relative;
-      z-index:1;
-    }
-    .rarityfill{
-      height:100%;
-      width:100%;
-      transform-origin:left;
-      transform: scaleX(0);
-      transition: transform .18s ease-out;
-    }
+    .cardInner{ position:relative; z-index:1; }
 
-    .titleRow{
+    .bannerRow{
       display:flex;
+      align-items:center;
       justify-content:space-between;
       gap:10px;
-      align-items:baseline;
-      margin-bottom: 8px;
-      position:relative;
-      z-index:1;
+      margin-bottom: 10px;
     }
-    .title{
-      font-size: 22px;
+
+    .banner{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
       font-weight: 900;
-      letter-spacing: .2px;
-      line-height: 1.1;
+      letter-spacing: .22em;
+      font-size: 11px;
+      text-transform: uppercase;
+      color: rgba(21,22,26,.84);
     }
+
+    .bannerDot{
+      width:10px; height:10px; border-radius:999px;
+      background: var(--accent);
+      box-shadow: 0 0 0 5px rgba(140,90,255,.10);
+    }
+
     .pill{
       font-size: 12px;
-      padding: 4px 10px;
+      padding: 5px 10px;
       border-radius:999px;
-      background: rgba(0,0,0,.06);
+      background: rgba(0,0,0,.05);
       border: 1px solid rgba(0,0,0,.12);
       white-space:nowrap;
+      color: rgba(21,22,26,.78);
     }
+
+    .title{
+      font-size: 26px;
+      font-weight: 950;
+      letter-spacing: .2px;
+      line-height: 1.1;
+      margin: 4px 0 10px 0;
+    }
+
     .body{
-      font-size: 15px;
-      line-height: 1.5;
-      position:relative;
-      z-index:1;
-      padding-top: 6px;
-      padding-bottom: 6px;
+      font-size: 16px;
+      line-height: 1.55;
+      color: rgba(21,22,26,.88);
+      white-space: pre-wrap;
     }
-    .footer{
-      margin-top: 12px;
-      font-size: 12px;
-      color: var(--muted);
-      border-top: 1px dashed rgba(0,0,0,.20);
-      padding-top: 10px;
+
+    .cardFooter{
+      margin-top: 14px;
       display:flex;
       justify-content:space-between;
       gap:10px;
       flex-wrap:wrap;
-      position:relative;
-      z-index:1;
+      font-size: 12px;
+      color: var(--muted);
+      border-top: 1px dashed rgba(0,0,0,.18);
+      padding-top: 10px;
     }
 
+    /* === Side Panel === */
     .panel{
       border:1px solid var(--ring);
       background: rgba(255,255,255,.06);
@@ -197,6 +217,7 @@
     }
 
     .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+
     select, input[type="text"]{
       border:1px solid var(--ring);
       background: rgba(255,255,255,.08);
@@ -207,12 +228,13 @@
       width: 100%;
     }
     select option{ color:#111; }
+
     .meta{
       display:flex;
       gap:10px;
       flex-wrap:wrap;
       font-size: 12px;
-      opacity:.85;
+      opacity:.88;
       margin-top: 10px;
     }
     .meta span{
@@ -238,8 +260,9 @@
       border-radius: 14px;
       padding: 10px 10px;
     }
-    .hTitle{ font-weight: 800; font-size: 13px; margin-bottom: 3px; }
+    .hTitle{ font-weight: 900; font-size: 13px; margin-bottom: 3px; }
     .hSub{ font-size: 12px; opacity:.75; }
+
     .hint{
       font-size: 12px;
       opacity:.70;
@@ -250,43 +273,51 @@
     @keyframes pop{ from{ transform: scale(.988); } to{ transform: scale(1); } }
   </style>
 </head>
+
 <body>
   <div class="wrap">
     <div class="top">
       <div class="brand">
-        <h1>D&D Random Draw</h1>
-        <div class="sub">Click Draw to “pull a card” from your pool.</div>
+        <h1>Rumourmill</h1>
+        <div class="sub">Tap <b>Draw</b> to pull a rumor. (Share this page with your players.)</div>
       </div>
       <div class="controls">
         <button id="drawBtn">Draw</button>
-        <button id="copyBtn" title="Copy the current result to clipboard">Copy</button>
+        <button id="copyBtn" title="Copy the current rumor to clipboard">Copy</button>
         <button id="resetBtn">Reset</button>
         <label class="toggle"><input id="noRepeats" type="checkbox" checked> No repeats</label>
       </div>
     </div>
 
     <div class="grid">
-      <!-- Main card -->
+      <!-- Main Card -->
       <div id="card" class="card">
-        <div class="raritybar"><div id="rarityFill" class="rarityfill"></div></div>
-        <div class="titleRow">
+        <div class="cardInner">
+          <div class="bannerRow">
+            <div class="banner">
+              <span class="bannerDot" aria-hidden="true"></span>
+              <span>RUMOR</span>
+            </div>
+            <div id="tag" class="pill">All</div>
+          </div>
+
           <div id="title" class="title">Ready.</div>
-          <div id="tag" class="pill">Deck</div>
-        </div>
-        <div id="body" class="body">Press <b>Draw</b> to get a result.</div>
-        <div class="footer">
-          <div>Remaining: <span id="remaining">—</span></div>
-          <div>Filter: <span id="activeFilter">All</span></div>
+          <div id="body" class="body">Press <b>Draw</b> to pull a rumor from the pool.</div>
+
+          <div class="cardFooter">
+            <div>Remaining: <span id="remaining">—</span></div>
+            <div>Filter: <span id="activeFilter">All</span></div>
+          </div>
         </div>
       </div>
 
       <!-- Sidebar -->
       <div class="panel">
-        <h2>Options</h2>
+        <h2>Filters</h2>
 
         <div class="row" style="margin-bottom:10px;">
           <div style="width:100%;">
-            <div style="font-size:12px;opacity:.78;margin-bottom:6px;">Category filter</div>
+            <div style="font-size:12px;opacity:.78;margin-bottom:6px;">Category</div>
             <select id="category"></select>
           </div>
         </div>
@@ -294,12 +325,12 @@
         <div class="row" style="margin-bottom:6px;">
           <div style="width:100%;">
             <div style="font-size:12px;opacity:.78;margin-bottom:6px;">Search (optional)</div>
-            <input id="search" type="text" placeholder="e.g. omen, curse, goblin..." />
+            <input id="search" type="text" placeholder="e.g. Obsidion, goblin, mine..." />
           </div>
         </div>
 
         <div class="meta">
-          <span id="totalMeta">Total: —</span>
+          <span id="totalMeta">Eligible: —</span>
           <span id="modeMeta">Mode: —</span>
         </div>
 
@@ -307,8 +338,7 @@
         <ul id="history" class="history"></ul>
 
         <div class="hint">
-          Edit the <b>DATA</b> array in this file to add your own entries.
-          You can use it for rumors, omens, loot quirks, encounters, etc.
+          To add more rumors, edit the <b>DATA</b> list in this file and commit.
         </div>
       </div>
     </div>
@@ -316,221 +346,142 @@
 
 <script>
   // =========================
-  // 1) EDIT YOUR DATA HERE
+  // 1) EDIT YOUR RUMORS HERE
   // =========================
-  // Tip: keep "id" unique.
+  // Keep "id" unique.
   const DATA = [
-    {
-      id: "omen_whisper",
-      title: "Whisper in the Walls",
-      category: "Omen",
-      body: "You hear your name from the next room in a voice you trust. Gain advantage on your next Insight check, but take -1 on your next Wisdom save.",
-      footer: "DM: you may reveal a vague clue about the next room.",
-      rarity: "common"
-    },
-    {
-      id: "curse_ashes",
-      title: "Ashes on the Wind",
-      category: "Curse",
-      body: "Gray ash clings to your fingers. The next creature you touch feels cold dread. The DM gains 1 doom token.",
-      footer: "Remove with Remove Curse or a full night’s sleep.",
-      rarity: "rare"
-    },
-    {
-      id: "loot_coin",
-      title: "A Coin That Won’t Spend",
-      category: "Loot",
-      body: "You find an old coin stamped with a king nobody recognizes. Merchants refuse it… but collectors might pay double.",
-      footer: "Worth 2× in the right place.",
-      rarity: "uncommon"
-    },
-    {
-      id: "rumor_lighthouse",
-      title: "The Lighthouse That Isn’t There",
-      category: "Rumor",
-      body: "Locals swear they’ve seen a lighthouse beam on moonless nights—yet maps show no coast for miles.",
-      footer: "If you investigate, the DM adds a secret location to the world.",
-      rarity: "common"
-    },
-
     {
       id: "rumor_01_chainledger",
       title: "The Quartermaster’s Double Ledger",
-      category: "Rumor",
-      body: "Source: Otis the Quartermaster. Otis swears someone’s been skimming supplies—ammo and chroma caps mostly—but the official ledger and his private tally don’t match. He thinks a ‘helpful kid’ is being used as a runner.",
-      footer: "Hook: Catch the runner at dusk near the crate stacks. DM Truth: It’s a planted trail by an Obsidion informant.",
-      rarity: "common"
+      category: "Rebel Camp",
+      body: "Otis the Quartermaster is convinced supplies are vanishing—ammo, dried meat, and chroma caps. He swears the crates arrive full, but the numbers keep slipping like someone is counting twice and carrying nothing."
     },
     {
       id: "rumor_02_redthreads",
-      title: "Red Thread on the Map",
-      category: "Rumor",
-      body: "Source: Mara “Hollow-Eye” Vex. Mara has a map with red thread connecting sightings—she says the Ember Guard patrols have started moving like they’re following a pattern, not searching randomly.",
-      footer: "Hook: Compare patrol paths to old mine vents. DM Truth: They’re triangulating a hidden chroma vein under Dothmire.",
-      rarity: "uncommon"
+      title: "Red Thread on the Scout Map",
+      category: "Rebel Camp",
+      body: "Mara “Hollow-Eye” Vex has patrol routes pinned up with red thread. She says the Ember Guard is moving like they’re drawing a symbol across the forest—not searching, not chasing—marking."
     },
     {
       id: "rumor_03_singingore",
       title: "The Ore That Sings Back",
-      category: "Rumor",
-      body: "Source: Garrik the Smith. Garrik claims a small lump of chroma ore in his forge ‘sang’ when struck—like a tuning fork—then went cold and cracked into ash.",
-      footer: "Hook: Bring Garrik ore from a different seam to test. DM Truth: The ‘song’ happens near a sealed ancient conduit.",
-      rarity: "rare"
+      category: "Rebel Camp",
+      body: "Garrik the smith claims a chunk of chroma ore rang like a bell when struck—then went ice-cold and crumbled to glittering dust. He won’t hit chroma bare-handed anymore."
     },
     {
       id: "rumor_04_healingscar",
-      title: "Silra’s Unwanted Miracle",
-      category: "Rumor",
-      body: "Source: Silra of the Lowlands. Silra quietly says she healed a rebel’s crushed hand—no magic, just herbs—yet the wound closed with a faint geometric scar like etched circuitry.",
-      footer: "Hook: Find others with ‘circuit scars’ and track where they were injured. DM Truth: Exposure to chroma dust causes arcane-technical imprinting.",
-      rarity: "uncommon"
+      title: "The Geometric Scar",
+      category: "Rebel Camp",
+      body: "Silra the medic treated a crushed hand and it healed… strangely. The skin closed with a faint, neat geometric pattern, like lines in a blueprint. The patient says their fingers ‘tingle’ near chroma."
     },
     {
-      id: "rumor_05_locketvoice",
-      title: "A Locket That Whispers Directions",
-      category: "Rumor",
-      body: "Source: A rebel child named Pip. Pip swears Skallad Pulter’s locket sometimes answers him—once it ‘told’ Skallad where an injured miner was trapped, before anyone heard the collapse.",
-      footer: "Hook: Ask Skallad about the locket when nobody’s around. DM Truth: The essence inside can sense chroma-powered structures.",
-      rarity: "rare"
+      id: "rumor_05_embertithe",
+      title: "The Ember Guard’s New ‘Tithe’",
+      category: "Dothmire",
+      body: "The mines don’t call it a quota anymore. The Ember Guard calls it a ‘chroma tithe.’ If a family can’t pay in ore, they pay in people—someone is always ‘reassigned’."
     },
     {
-      id: "rumor_06_embertax",
-      title: "The Ember Guard’s New ‘Tax’",
-      category: "Rumor",
-      body: "Source: A rancher from Litwon. The Ember Guard stopped calling it a quota—they call it a ‘chroma tithe.’ Anyone short gets a family member ‘taken for reassignment.’",
-      footer: "Hook: Intercept the next tithe wagon headed toward Obsidion. DM Truth: The ‘reassigned’ are sent to a hidden lab near Obsidion.",
-      rarity: "common"
+      id: "rumor_06_minevanish",
+      title: "Missing Between Two Turns",
+      category: "Dothmire",
+      body: "Miners whisper there’s a stretch in the tunnels where people disappear between two bends. No screams, no scuffle—just a dropped lantern and a faint smear of gray dust like ash."
     },
     {
-      id: "rumor_07_minevanish",
-      title: "People Vanish Between Two Turns",
-      category: "Rumor",
-      body: "Source: A soot-faced miner from Dothmire. He says folks disappear in the mines between two bends—no drag marks, no screams—just a dropped lantern and a smear of gray dust.",
-      footer: "Hook: Escort a supply run and mark the two bends. DM Truth: A broken teleport lattice flickers there when chroma pressure spikes.",
-      rarity: "rare"
-    },
-    {
-      id: "rumor_08_blackpine",
+      id: "rumor_07_blackpine",
       title: "The Black Pine Watch",
-      category: "Rumor",
-      body: "Source: Mara “Hollow-Eye” Vex. Mara says there’s a watchtower in the forest that wasn’t there last month—blackened wood, no footprints, but lantern light at night.",
-      footer: "Hook: Scout it at dawn when the lantern goes out. DM Truth: It’s an Obsidion listening post with illusion screens.",
-      rarity: "uncommon"
+      category: "West Forest",
+      body: "Scouts talk about a watchtower in the forest that wasn’t there a month ago—blackened wood, lantern light at night, and no tracks in the mud around it. As if it appeared already finished."
     },
     {
-      id: "rumor_09_othmire_ruins",
+      id: "rumor_08_othmire_breathing",
       title: "Othmire’s Ruins Are ‘Breathing’",
-      category: "Rumor",
-      body: "Source: A trader from Trek. He claims the ruins near Othmire vent warm air in slow pulses, like a sleeping beast—sometimes carrying sparks of violet light.",
-      footer: "Hook: Follow the pulses to a hidden hatch. DM Truth: Ancient ventilation from a chroma reactor node.",
-      rarity: "rare"
+      category: "Othmire",
+      body: "Near Othmire, the old ruins vent warm air in slow pulses, like something sleeping under stone. On cold mornings, you can see the ‘breath’ from a distance like a ghost exhaling."
     },
     {
-      id: "rumor_10_rustborne_scout",
+      id: "rumor_09_rustborne_treeline",
       title: "A Rustborne Watched the Camp",
-      category: "Rumor",
-      body: "Source: A tower guard. They spotted a Rustborne automata at the treeline—didn’t attack, just… observed. When challenged, it turned its head like it was listening, then walked away.",
-      footer: "Hook: Track its footprints to find where it ‘reports.’ DM Truth: It’s collecting voiceprints and faces for Obsidion.",
-      rarity: "uncommon"
+      category: "Rebel Camp",
+      body: "A guard swears they saw a Rustborne automata at the treeline. It didn’t attack. It just stood there, head tilted, as if listening, then turned and walked away into the dark."
     },
     {
-      id: "rumor_11_sylra_sign",
-      title: "Sylra Vexx Left a Sign",
-      category: "Rumor",
-      body: "Source: Toren Gearmind (if present) / or a Trek tinkerer. Someone found a burned scrap with a gear diagram and one line: ‘Wrong questions start in Obsidion.’ The handwriting looks like Sylra’s.",
-      footer: "Hook: Take the scrap to Toren; he’ll recognize the design language. DM Truth: It’s genuine, and it’s recent.",
-      rarity: "rare"
+      id: "rumor_10_white_mask_hunters",
+      title: "Mask-Hunters Asking Questions",
+      category: "Roads",
+      body: "Travelers report strangers in clean cloaks asking about a spellcaster wearing a tarnished white mask. They pay for answers, but their smiles look practiced—like a ritual."
     },
     {
-      id: "rumor_12_white_mask",
-      title: "A White Mask in the Mud",
-      category: "Rumor",
-      body: "Source: Silra of the Lowlands. Silra found a cracked white mask near the stream—too clean for the camp. Inside was ash-smudged scripture about ‘Clarity through concealment.’",
-      footer: "Hook: Question travelers about the Virelin Order. DM Truth: A Virelin agent is nearby, hunting Luthen.",
-      rarity: "uncommon"
+      id: "rumor_11_padlocked_tent",
+      title: "The Tent Otis Won’t Explain",
+      category: "Rebel Camp",
+      body: "There’s a small tent behind the supply stacks with too many padlocks. Kids swear they heard tapping from inside—metal on wood, slow and patient—like something counting time."
     },
     {
-      id: "rumor_13_false_hero",
-      title: "Someone Pretended to Be the Red Band",
-      category: "Rumor",
-      body: "Source: A farmhand from Sake. A ‘Red Band’ demanded food and threatened a family—doesn’t match the folk hero stories. The ‘medic’ carried a short wand and wore Obsidion boots.",
-      footer: "Hook: Track the impostor before Skallad’s name is ruined. DM Truth: Ember Guard propaganda op.",
-      rarity: "common"
-    },
-    {
-      id: "rumor_14_firepit_echo",
-      title: "The Central Fire Pit Repeats Secrets",
-      category: "Rumor",
-      body: "Source: A sleepless watchman. At night, if you stare into the camp’s central fire, you sometimes hear voices repeat things you said earlier—quietly, like an echo that learned your words.",
-      footer: "Hook: Test it with a false secret and see where it spreads. DM Truth: A small chroma shard under the pit records sound.",
-      rarity: "uncommon"
-    },
-    {
-      id: "rumor_15_trek_riverdeal",
-      title: "A Deal Floats Down the River",
-      category: "Rumor",
-      body: "Source: A merchant from Trek. There’s talk of a sealed crate drifting from Trek toward Obsidion via the river—guarded by ‘paperwork,’ not soldiers. It’s marked as ‘machine parts.’",
-      footer: "Hook: Intercept the crate at a shallow bend. DM Truth: Prototype Rustborne core components.",
-      rarity: "common"
-    },
-    {
-      id: "rumor_16_obsidion_racistroll",
-      title: "Obsidion’s ‘Sorting’ Wagons",
-      category: "Rumor",
-      body: "Source: An escaped laborer. Obsidion is running ‘sorting’ wagons—anyone not Aetherian enough gets branded for mine duty or the Ember Guard’s experiments.",
-      footer: "Hook: Free a wagon before it reaches Obsidion gates. DM Truth: True, and one wagon carries a missing Dothmire healer.",
-      rarity: "uncommon"
-    },
-    {
-      id: "rumor_17_goblin_messengers",
+      id: "rumor_12_goblin_messengers",
       title: "Goblins Carry Messages Now",
-      category: "Rumor",
-      body: "Source: Mara “Hollow-Eye” Vex. Mara claims she saw goblins running a message route through the western forest—oddly disciplined, wearing scraps of stamped leather like uniforms.",
-      footer: "Hook: Capture one messenger; find who’s paying them. DM Truth: A third-party faction is hiring goblins to avoid Obsidion patrols.",
-      rarity: "common"
+      category: "West Forest",
+      body: "Someone has goblins running a message route through the western woods. Not raiders—messengers. Quick, disciplined, wearing scraps stamped with symbols like uniforms."
     },
     {
-      id: "rumor_18_chroma_storm",
-      title: "Chroma Storm Over Karnathi",
-      category: "Rumor",
-      body: "Source: A scout with singed hair. A green-violet storm rolled over the Karnathi mountains—lightning that struck silently, leaving glassy footprints in the soil and making compasses spin.",
-      footer: "Hook: Collect a ‘glassy footprint’ sample for Garrik/Silra. DM Truth: Storm triggered an ancient array awakening sequence.",
-      rarity: "rare"
+      id: "rumor_13_firepit_echo",
+      title: "The Fire That Repeats Words",
+      category: "Rebel Camp",
+      body: "Late at night, if you stare into the central fire long enough, you can hear faint echoes—snatches of conversations from earlier in the day. Some swear the fire ‘learns’ secrets."
     },
     {
-      id: "rumor_19_padlocked_tent",
-      title: "A Tent That Otis Won’t Explain",
-      category: "Rumor",
-      body: "Source: Camp gossip. There’s a small tent behind Otis’s supply stacks with triple padlocks. Kids say they heard tapping from inside—like metal fingers on wood.",
-      footer: "Hook: Earn Otis’s trust or pick the locks at risk. DM Truth: A damaged Rustborne is chained inside for interrogation.",
-      rarity: "uncommon"
+      id: "rumor_14_chroma_storm",
+      title: "The Silent Lightning Storm",
+      category: "Karnathi Mountains",
+      body: "A green-violet storm rolled over the mountains—lightning that struck with no thunder. Afterward, compasses spun, and the ground held glassy footprints like heat-melted stone."
+    },
+
+    /* --- Obsidion political distress (NEW / REPLACEMENTS) --- */
+    {
+      id: "rumor_15_obsidion_king_ill",
+      title: "The King Isn’t Seen Anymore",
+      category: "Obsidion",
+      body: "Merchants claim the Obsidion King hasn’t appeared on the high balcony in weeks. Official notices insist he’s ‘in prayer and strategy,’ but the city’s tone feels… leaderless."
     },
     {
-      id: "rumor_20_dothmire_missing_song",
-      title: "The Missing Were Taken by ‘Song’",
-      category: "Rumor",
-      body: "Source: An old Dothmire widow. She says the missing people were last seen humming the same tune—like they couldn’t stop. The next morning, their homes were neat, beds made, as if they left willingly.",
-      footer: "Hook: Learn the tune; see if it matches Garrik’s ‘singing ore.’ DM Truth: A chroma resonance compulsion—someone is testing control frequencies.",
-      rarity: "rare"
+      id: "rumor_16_obsidion_court_cuts",
+      title: "The Court Is Purging Itself",
+      category: "Obsidion",
+      body: "Aetherian officers are being reassigned overnight and noble aides vanish from the record books. People whisper the palace is cutting out anyone who asks the wrong question—before the question spreads."
+    },
+    {
+      id: "rumor_17_obsidion_coin_thins",
+      title: "Obsidion Coin Feels ‘Light’",
+      category: "Obsidion",
+      body: "Trek traders say fresh-minted Obsidion coins feel slightly lighter than they should. Some refuse them. Others say it’s just paranoia—until you hear how quickly prices rose this month."
+    },
+    {
+      id: "rumor_18_obsidion_river_blockade",
+      title: "The River Is Being ‘Checked’",
+      category: "Trek",
+      body: "The river route between Trek and Obsidion is slowing. New checkpoints demand paperwork for everything—food, tools, even blankets—like Obsidion is bracing for unrest or hoarding supplies."
+    },
+    {
+      id: "rumor_19_obsidion_food_lines",
+      title: "Food Lines Under Guard",
+      category: "Obsidion",
+      body: "A traveler swears there are bread lines guarded by soldiers in Obsidion’s lower streets. People keep their heads down and speak in codes, because complaining gets you ‘reassigned.’"
+    },
+    {
+      id: "rumor_20_obsidion_succession",
+      title: "Succession Whispers in High Houses",
+      category: "Obsidion",
+      body: "Nobles are quietly marrying off heirs and securing alliances, fast. The rumor is simple: someone expects a change at the top—whether by sickness, coup, or ‘necessary’ replacement."
     }
   ];
-
-  // Visual accents by rarity (you can rename rarities however you like)
-  const RARITY_STYLE = {
-    common:   { fill: "rgba(255,255,255,0)",   border: "rgba(0,0,0,.14)" },
-    uncommon: { fill: "rgba(80,200,140,.75)",  border: "rgba(80,200,140,.45)" },
-    rare:     { fill: "rgba(140,90,255,.78)",  border: "rgba(140,90,255,.45)" },
-    legendary:{ fill: "rgba(255,170,60,.80)",  border: "rgba(255,170,60,.45)" },
-  };
 
   // =========================
   // 2) APP STATE
   // =========================
-  const STORAGE_KEY = "dd_draw_state_v1";
+  const STORAGE_KEY = "rumourmill_state_v2";
 
   let state = {
-    remainingIds: [],   // for no-repeats mode
-    historyIds: [],     // last -> first
+    remainingIds: [],
+    historyIds: [],
     category: "All",
     search: ""
   };
@@ -542,7 +493,6 @@
     body: document.getElementById("body"),
     remaining: document.getElementById("remaining"),
     activeFilter: document.getElementById("activeFilter"),
-    rarityFill: document.getElementById("rarityFill"),
     drawBtn: document.getElementById("drawBtn"),
     resetBtn: document.getElementById("resetBtn"),
     copyBtn: document.getElementById("copyBtn"),
@@ -553,6 +503,12 @@
     totalMeta: document.getElementById("totalMeta"),
     modeMeta: document.getElementById("modeMeta"),
   };
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, m => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[m]));
+  }
 
   function getById(id){ return DATA.find(x => x.id === id); }
 
@@ -568,7 +524,7 @@
     return DATA.filter(item => {
       if (cat !== "All" && item.category !== cat) return false;
       if (!q) return true;
-      const hay = `${item.title} ${item.category} ${item.body} ${item.footer || ""}`.toLowerCase();
+      const hay = `${item.title} ${item.category} ${item.body}`.toLowerCase();
       return hay.includes(q);
     });
   }
@@ -594,17 +550,16 @@
   }
 
   function reshuffleRemainingFromCurrentFilter(){
-    // Build remaining list from whatever is currently eligible
     const eligible = filteredData().map(x => x.id);
     state.remainingIds = [...eligible];
   }
 
   function initUI(){
-    // fill category dropdown
     el.category.innerHTML = "";
     for(const c of categories()){
       const opt = document.createElement("option");
-      opt.value = c; opt.textContent = c;
+      opt.value = c;
+      opt.textContent = c;
       el.category.appendChild(opt);
     }
     el.category.value = state.category || "All";
@@ -616,11 +571,11 @@
     el.totalMeta.textContent = `Eligible: ${eligibleCount}`;
     el.modeMeta.textContent = `Mode: ${el.noRepeats.checked ? "No repeats" : "Repeats OK"}`;
 
-    el.activeFilter.textContent = state.category === "All" ? "All" : state.category;
-    if ((state.search || "").trim()) el.activeFilter.textContent += ` + Search`;
+    let filterLabel = (state.category === "All") ? "All" : state.category;
+    if ((state.search || "").trim()) filterLabel += " + Search";
+    el.activeFilter.textContent = filterLabel;
 
     if (el.noRepeats.checked){
-      // remaining is based on state.remainingIds, but it might include ids that no longer match filters
       const eligibleSet = new Set(filteredData().map(x=>x.id));
       const remainingEligible = state.remainingIds.filter(id => eligibleSet.has(id));
       el.remaining.textContent = `${remainingEligible.length} / ${eligibleSet.size}`;
@@ -638,23 +593,10 @@
       const li = document.createElement("li");
       li.innerHTML = `
         <div class="hTitle">${escapeHtml(item.title)}</div>
-        <div class="hSub">${escapeHtml(item.category || "—")} • ${escapeHtml(item.rarity || "—")}</div>
+        <div class="hSub">${escapeHtml(item.category || "—")}</div>
       `;
       el.history.appendChild(li);
     }
-  }
-
-  function escapeHtml(s){
-    return String(s).replace(/[&<>"']/g, m => ({
-      "&":"&amp;","<":"&lt;"," >":"&gt;",'"':"&quot;","'":"&#039;"
-    }[m] || m));
-  }
-
-  function setRarityStyle(rarity){
-    const st = RARITY_STYLE[rarity] || RARITY_STYLE.common;
-    el.rarityFill.style.background = st.fill;
-    el.rarityFill.style.transform = "scaleX(1)";
-    el.card.style.borderColor = st.border;
   }
 
   function renderCard(item){
@@ -663,29 +605,28 @@
     el.card.classList.add("pop");
 
     el.title.textContent = item.title;
-    el.tag.textContent = item.category || "Result";
+    el.tag.textContent = item.category || "Rumor";
+    el.body.textContent = item.body;
+  }
 
-    const footerText = item.footer ? `\n\n${item.footer}` : "";
-    el.body.textContent = `${item.body}${footerText}`;
-
-    setRarityStyle(item.rarity);
+  function pushHistory(id){
+    state.historyIds.unshift(id);
+    state.historyIds = Array.from(new Set(state.historyIds)).slice(0, 50);
   }
 
   function draw(){
     const eligible = filteredData();
+
     if(eligible.length === 0){
       renderCard({
         title: "No matches",
         category: "Filter",
-        body: "Your filter/search has no eligible items. Change the category or clear the search box.",
-        footer: "",
-        rarity: "common"
+        body: "Your filter/search has no eligible rumors. Change the category or clear the search box."
       });
       return;
     }
 
     if(!el.noRepeats.checked){
-      // repeats allowed: pick from eligible
       const pick = eligible[Math.floor(Math.random() * eligible.length)];
       pushHistory(pick.id);
       renderCard(pick);
@@ -695,19 +636,14 @@
       return;
     }
 
-    // no repeats: pick from remaining eligible
     const eligibleSet = new Set(eligible.map(x => x.id));
-
-    // If remaining is empty or missing eligible items, rebuild it
     const remainingEligible = state.remainingIds.filter(id => eligibleSet.has(id));
+
     if(remainingEligible.length === 0){
-      // "deck empty" for this filter — require reset or auto-reshuffle
       renderCard({
-        title: "Pool empty (for this filter)",
+        title: "Pool empty",
         category: "Reset",
-        body: "You’ve drawn everything in the current filtered pool. Hit Reset to reshuffle, or change the filter to draw from something else.",
-        footer: "",
-        rarity: "uncommon"
+        body: "You’ve drawn everything in this filtered pool. Hit Reset to reshuffle (or change your filter)."
       });
       return;
     }
@@ -715,7 +651,6 @@
     const idx = Math.floor(Math.random() * remainingEligible.length);
     const pickedId = remainingEligible[idx];
 
-    // Remove it from remainingIds
     state.remainingIds = state.remainingIds.filter(id => id !== pickedId);
 
     const picked = getById(pickedId);
@@ -723,18 +658,13 @@
       pushHistory(picked.id);
       renderCard(picked);
     }
+
     save();
     updateMeta();
     renderHistory();
   }
 
-  function pushHistory(id){
-    state.historyIds.unshift(id);
-    state.historyIds = Array.from(new Set(state.historyIds)).slice(0, 50); // unique, max 50
-  }
-
   function reset(){
-    // reset remaining based on current filter/search
     reshuffleRemainingFromCurrentFilter();
     state.historyIds = [];
     renderHistory();
@@ -742,15 +672,13 @@
     save();
     renderCard({
       title: "Reset complete",
-      category: "Deck",
-      body: "Your pool has been reshuffled for the current filter/search. Click Draw.",
-      footer: "",
-      rarity: "common"
+      category: "Rumor",
+      body: "The rumor pool has been reshuffled. Press Draw."
     });
   }
 
   async function copyCurrent(){
-    const text = `${el.title.textContent}\n${el.tag.textContent}\n\n${el.body.textContent}`;
+    const text = `${el.title.textContent}\n\n${el.body.textContent}`;
     try{
       await navigator.clipboard.writeText(text);
       el.copyBtn.textContent = "Copied!";
@@ -760,9 +688,7 @@
     }
   }
 
-  // =========================
-  // 3) WIRE UP EVENTS
-  // =========================
+  // Wire up events
   el.drawBtn.addEventListener("click", draw);
   el.resetBtn.addEventListener("click", reset);
   el.copyBtn.addEventListener("click", copyCurrent);
@@ -782,19 +708,15 @@
   });
 
   el.noRepeats.addEventListener("change", () => {
-    // When switching to no-repeats, build remaining from current filter
     if(el.noRepeats.checked) reshuffleRemainingFromCurrentFilter();
     updateMeta();
     save();
   });
 
-  // =========================
-  // 4) INIT
-  // =========================
+  // Init
   load();
   initUI();
 
-  // If remainingIds is empty, initialize it (especially first run)
   if(!Array.isArray(state.remainingIds) || state.remainingIds.length === 0){
     reshuffleRemainingFromCurrentFilter();
   }
@@ -804,10 +726,8 @@
 
   renderCard({
     title: "Ready.",
-    category: "Deck",
-    body: "Click Draw to pull something from your pool.",
-    footer: "Tip: Use Category + Search to control what’s eligible.",
-    rarity: "common"
+    category: "Rumor",
+    body: "Press Draw to pull a rumor from the pool."
   });
 
   save();
